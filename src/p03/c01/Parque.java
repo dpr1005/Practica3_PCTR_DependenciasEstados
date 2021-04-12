@@ -2,6 +2,8 @@ package src.p03.c01;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Parque implements IParque{
 
@@ -34,14 +36,26 @@ public class Parque implements IParque{
 		// Imprimimos el estado del parque
 		imprimirInfo(puerta, "Entrada");
 		
-		// TODO
+		checkInvariante();
 		
-		
-		// TODO
+		notifyAll();
 		
 	}
 	
 	public synchronized void salirDelParque(String puerta) {
+		
+		comprobarAntesDeSalir();
+		
+		// Disminuimos el contador total y el individual
+		contadorPersonasTotales--;
+		contadoresPersonasPuerta.put(puerta, contadoresPersonasPuerta.get(puerta)-1);
+		
+		// Imprimimos el estado del parque
+		imprimirInfo(puerta, "Salida");
+		
+		checkInvariante();
+		
+		notifyAll();
 		
 	}
 	
@@ -65,34 +79,30 @@ public class Parque implements IParque{
 		}
 		return sumaContadoresPuerta;
 	}
-
-	private int sumarContadoresPuertaSalida() {
-		int sumaContadoresPuerta = 0;
-		Enumeration<Integer> iterPuertas = contadoresPersonasPuertaSalida.elements();
-		while (iterPuertas.hasMoreElements()) {
-			sumaContadoresPuerta += iterPuertas.nextElement();
-		}
-		return sumaContadoresPuerta;
-	}
 	
 	protected void checkInvariante() {
-		assert sumarContadoresPuerta() == contadorPersonasTotales : "INV: La suma de contadores de las puertas debe ser igual al valor del contador del parte";
-		assert sumarContadoresPuerta() - sumarContadoresPuertaSalida()  == contadorPersonasTotales: "INV: La diferencia entre las entradas y las salidas debe de ser igual al contadore de personas.";
-		// TODO
+		assert sumarContadoresPuerta() == contadorPersonasTotales : "INV: La suma de contadores de las puertas debe ser igual al valor del contador del parque.";
+		assert contadorPersonasTotales >= 0: "INV: El aforo no puede ser negativo.";
+		assert contadorPersonasTotales <= aforoMaximo: "INV: El aforo no puede ser superior al máximo.";
 	}
 
 	protected synchronized void comprobarAntesDeEntrar(){
-		checkInvariante();
-		notifyAll();
-	}}
+		while (contadorPersonasTotales == aforoMaximo) {
+			try {
+				wait();
+			} catch (InterruptedException ex) {
+				Logger.getGlobal().log(Level.WARNING, "Entrada interrumpida, aforo limitado.");
+				Logger.getGlobal().log(Level.WARNING, ex.toString());
+			}
+		}
+	}
 
 	protected synchronized void comprobarAntesDeSalir(){
-		checkInvariante();
 		while (contadorPersonasTotales <= 0) {
 			try {
 				wait();
 			} catch (InterruptedException ex) {
-				Logger.getGlobal().log(Level.WARNING, "Salida interrumpida, se necesitan más personas. Remaining: " + contadorPersonasTotales);
+				Logger.getGlobal().log(Level.WARNING, "Salida interrumpida, se necesitan mÃ¡s personas. Remaining: " + contadorPersonasTotales);
 				Logger.getGlobal().log(Level.WARNING, ex.toString());
 			}
 		}
