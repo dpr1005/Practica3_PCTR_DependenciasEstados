@@ -59,29 +59,43 @@ public class Parque implements IParque{
 	
 	private int sumarContadoresPuerta() {
 		int sumaContadoresPuerta = 0;
-			Enumeration<Integer> iterPuertas = contadoresPersonasPuerta.elements();
-			while (iterPuertas.hasMoreElements()) {
-				sumaContadoresPuerta += iterPuertas.nextElement();
-			}
+		Enumeration<Integer> iterPuertas = contadoresPersonasPuerta.elements();
+		while (iterPuertas.hasMoreElements()) {
+			sumaContadoresPuerta += iterPuertas.nextElement();
+		}
+		return sumaContadoresPuerta;
+	}
+
+	private int sumarContadoresPuertaSalida() {
+		int sumaContadoresPuerta = 0;
+		Enumeration<Integer> iterPuertas = contadoresPersonasPuertaSalida.elements();
+		while (iterPuertas.hasMoreElements()) {
+			sumaContadoresPuerta += iterPuertas.nextElement();
+		}
 		return sumaContadoresPuerta;
 	}
 	
 	protected void checkInvariante() {
 		assert sumarContadoresPuerta() == contadorPersonasTotales : "INV: La suma de contadores de las puertas debe ser igual al valor del contador del parte";
-		// TODO 
+		assert sumarContadoresPuerta() - sumarContadoresPuertaSalida()  == contadorPersonasTotales: "INV: La diferencia entre las entradas y las salidas debe de ser igual al contadore de personas.";
 		// TODO
 	}
 
-	protected void comprobarAntesDeEntrar(){	// TODO
-		//
-		// TODO
-		//
-	}
+	protected synchronized void comprobarAntesDeEntrar(){
+		checkInvariante();
+		notifyAll();
+	}}
 
-	protected void comprobarAntesDeSalir(){		// TODO
-		//
-		// TODO
-		//
+	protected synchronized void comprobarAntesDeSalir(){
+		checkInvariante();
+		while (contadorPersonasTotales <= 0) {
+			try {
+				wait();
+			} catch (InterruptedException ex) {
+				Logger.getGlobal().log(Level.WARNING, "Salida interrumpida, se necesitan más personas. Remaining: " + contadorPersonasTotales);
+				Logger.getGlobal().log(Level.WARNING, ex.toString());
+			}
+		}
 	}
 
 
